@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>DexTools</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">DexTools</div>
+      <div class="badge">process :dexrunner</div>
+    </header>
+
+    <!-- GitHub Release Source -->
+    <div class="section">
+      <div class="section-label">GitHub Release Source</div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="repo-input">Repository</label>
+          <input id="repo-input" type="text" value="KRWCLASSIC/DexToolsExample" placeholder="owner/repo" />
+        </div>
+        <div class="field">
+          <label for="tag-input">Release Tag</label>
+          <input id="tag-input" type="text" value="tools-v1" placeholder="tools-v1" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Working Paths -->
+    <div class="section">
+      <div class="section-label">File Paths</div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="input-path">Input APK / Splits</label>
+          <input id="input-path" type="text" value="/sdcard/Download/app.apk" />
+        </div>
+        <div class="field">
+          <label for="output-path">Output Path</label>
+          <input id="output-path" type="text" value="/sdcard/Download/app-out.apk" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tool Actions -->
+    <div class="tools-list" id="tools-list">
+      <!-- Injected by main.ts -->
+    </div>
+
+    <!-- Logs Console -->
+    <div class="console">
+      <div class="console-top">
+        <span class="console-label">Output</span>
+        <div class="console-actions">
+          <button class="btn btn-sm" id="btn-clear">Clear</button>
+          <button class="btn btn-sm btn-danger" id="btn-abort">Kill Process</button>
+        </div>
+      </div>
+      <div class="console-body" id="console-body">
+        <div class="line-info">[ready] process listening on IPC</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

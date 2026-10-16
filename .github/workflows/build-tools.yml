@@ -1,0 +1,66 @@
+name: Build Tools
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'tools-v*'
+      - 'v*'
+
+jobs:
+  build-dex:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools 34.0.0
+        run: |
+          sdkmanager "build-tools;34.0.0"
+          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
+
+      - name: Make package script executable
+        run: chmod +x ./scripts/package-tool.sh
+
+      - name: Build APKEditor.dex.jar
+        run: |
+          wget -q https://github.com/REAndroid/APKEditor/releases/latest/download/APKEditor.jar -O apkeditor.jar
+          ./scripts/package-tool.sh apkeditor.jar apkeditor 26
+
+      - name: Build ubersigner.dex.jar
+        run: |
+          wget -q https://github.com/patrickfav/uber-apk-signer/releases/latest/download/uber-apk-signer.jar -O ubersigner.jar
+          ./scripts/package-tool.sh ubersigner.jar ubersigner 26
+
+      - name: Build apktool.dex.jar
+        run: |
+          wget -q https://github.com/iBotPeaches/Apktool/releases/latest/download/apktool.jar -O apktool.jar
+          ./scripts/package-tool.sh apktool.jar apktool 26
+
+      - name: Build apksigner.dex.jar
+        run: |
+          cp "$ANDROID_HOME/build-tools/34.0.0/lib/apksigner.jar" ./apksigner.jar
+          ./scripts/package-tool.sh apksigner.jar apksigner 26
+
+      - name: Publish Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'tools-v1' }}
+          name: "DexTools Binaries (${{ github.ref_type == 'tag' && github.ref_name || 'tools-v1' }})"
+          files: |
+            *.dex.jar
+            *.dex.jar.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

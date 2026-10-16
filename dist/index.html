@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DexTools Example Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-DabMpnos.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BeN8gOis.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <h1>DexTools Studio</h1>
+        <p>Pure Dynamic Remote DEX Engine & Isolated Process Runner</p>
+      </div>
+      <div class="process-badge">
+        <span class="status-dot"></span>
+        <span>Process: :dexrunner (Isolated)</span>
+      </div>
+    </header>
+
+    <!-- Path & Argument Configuration -->
+    <section class="path-bar">
+      <div class="input-group">
+        <label for="input-path">Target Input (APK / Splits Directory)</label>
+        <input id="input-path" type="text" value="/sdcard/Download/app.apk" placeholder="/path/to/input.apk" />
+      </div>
+      <div class="input-group">
+        <label for="output-path">Target Output Path</label>
+        <input id="output-path" type="text" value="/sdcard/Download/app-out.apk" placeholder="/path/to/output.apk" />
+      </div>
+    </section>
+
+    <!-- Dynamic Tools Grid -->
+    <main class="tools-grid" id="tools-container">
+      <!-- Injected dynamically by main.ts -->
+    </main>
+
+    <!-- Live Execution Console / Terminal -->
+    <section class="terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-title">
+          <span>● Live Standard Output Stream</span>
+        </div>
+        <div class="terminal-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-clear-logs">Clear</button>
+          <button class="btn btn-danger btn-sm" id="btn-abort-task">Kill Worker Process (Abort)</button>
+        </div>
+      </div>
+      <div class="terminal-content" id="terminal-logs">
+        <div class="log-line log-info">[DexTools Engine] Ready. Choose an action above to execute in isolated worker.</div>
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>
