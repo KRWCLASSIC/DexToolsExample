@@ -39,7 +39,7 @@ export const TOOLS: ToolItem[] = [
     id: 'ubersigner',
     name: 'UberSigner',
     description: 'Debug key signer & zipalign with resign support',
-    entrypoint: 'com.github.patrickfav.uber.apk.signer.Main',
+    entrypoint: 'at.favre.tools.apksigner.SignTool',
     assetFile: 'ubersigner.dex.jar',
     actions: [
       {
