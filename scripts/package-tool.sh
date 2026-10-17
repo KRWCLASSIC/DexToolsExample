@@ -2,6 +2,7 @@
 # ==============================================================================
 # DexTools Packaging Script for GitHub Actions / Linux CI
 # Compiles upstream desktop JAR files into Android-compatible Multi-DEX containers (.dex.jar)
+# Preserves all internal non-class resources (properties, XML, configs)
 # ==============================================================================
 
 set -euo pipefail
@@ -45,12 +46,21 @@ fi
 TARGET_JAR="${OUTPUT_NAME}.dex.jar"
 rm -f "$TARGET_JAR"
 
-echo "==> Using d8: $D8_CMD"
-echo "==> Transpiling $INPUT_JAR -> $TARGET_JAR (min-sdk: $MIN_SDK)..."
+BUILD_DIR=$(mktemp -d -t dextools-build-XXXXXX)
+trap 'rm -rf "$BUILD_DIR"' EXIT
 
-# Passing a .jar or .zip output path causes d8 to create the archive containing
-# classes.dex, classes2.dex (Multi-DEX) and automatically preserve non-class resources
-"$D8_CMD" --min-api "$MIN_SDK" --output "$TARGET_JAR" "$INPUT_JAR"
+echo "==> Unpacking non-class resources from $INPUT_JAR..."
+unzip -q "$INPUT_JAR" -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d "$BUILD_DIR" 2>/dev/null || true
+
+echo "==> Transpiling $INPUT_JAR to Dalvik bytecode using $D8_CMD (min-api $MIN_SDK)..."
+"$D8_CMD" --min-api "$MIN_SDK" --output "$BUILD_DIR" "$INPUT_JAR"
+
+echo "==> Compressing into $TARGET_JAR..."
+ORIG_PWD=$(pwd)
+(
+    cd "$BUILD_DIR"
+    zip -r -9 -q "$ORIG_PWD/$TARGET_JAR" .
+)
 
 # Calculate SHA-256 Checksum
 SHA256_HASH=$(sha256sum "$TARGET_JAR" | awk '{print $1}')

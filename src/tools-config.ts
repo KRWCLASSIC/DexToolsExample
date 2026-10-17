@@ -1,11 +1,20 @@
+export interface ToolActionContext {
+  input: string;
+  outputDir: string;
+  outputFile: string;
+  filesDir: string;
+}
+
 export interface ToolAction {
   name: string;
-  getArgs: (input: string, output: string) => string[];
+  description?: string;
+  getArgs: (ctx: ToolActionContext) => string[];
 }
 
 export interface ToolItem {
   id: string;
   name: string;
+  description: string;
   entrypoint: string;
   assetFile: string;
   actions: ToolAction[];
@@ -13,44 +22,73 @@ export interface ToolItem {
 
 export const TOOLS: ToolItem[] = [
   {
-    id: 'apkeditor',
-    name: 'APKEditor',
-    entrypoint: 'com.reandroid.apkeditor.Main',
-    assetFile: 'apkeditor.dex.jar',
+    id: 'apksigner',
+    name: 'apksigner',
+    description: 'APK signature scheme verification (v1–v4)',
+    entrypoint: 'com.android.apksigner.ApkSignerTool',
+    assetFile: 'apksigner.dex.jar',
     actions: [
-      { name: 'Merge Splits', getArgs: (i, o) => ['m', '-i', i, '-o', o] },
-      { name: 'Decode', getArgs: (i, o) => ['d', '-i', i, '-o', o] },
-      { name: 'Build', getArgs: (i, o) => ['b', '-i', i, '-o', o] }
+      {
+        name: 'Verify (v1-v4)',
+        description: 'Verifies APK signature schemes & cert details',
+        getArgs: (ctx) => ['verify', '-v', '--print-certs', ctx.input]
+      }
     ]
   },
   {
     id: 'ubersigner',
     name: 'UberSigner',
+    description: 'Debug key signer & zipalign with resign support',
     entrypoint: 'com.github.patrickfav.uber.apk.signer.Main',
     assetFile: 'ubersigner.dex.jar',
     actions: [
-      { name: 'Sign & Align', getArgs: (i) => ['--apks', i, '--overwrite'] },
-      { name: 'Verify', getArgs: (i) => ['--verify', '--apks', i] }
+      {
+        name: 'Sign & Align',
+        description: 'Signs with debug key & zipaligns (supports already signed APKs)',
+        getArgs: (ctx) => ['--apks', ctx.input, '--out', ctx.outputDir, '--allowResign', '--overwrite']
+      },
+      {
+        name: 'Verify Signatures',
+        description: 'Quick signature scheme verification',
+        getArgs: (ctx) => ['--verify', '--apks', ctx.input]
+      }
     ]
   },
   {
-    id: 'apksigner',
-    name: 'apksigner',
-    entrypoint: 'com.android.apksigner.ApkSignerTool',
-    assetFile: 'apksigner.dex.jar',
+    id: 'apkeditor',
+    name: 'APKEditor',
+    description: 'Manifest, resources, and split APK merger',
+    entrypoint: 'com.reandroid.apkeditor.Main',
+    assetFile: 'apkeditor.dex.jar',
     actions: [
-      { name: 'Verify (v1-v4)', getArgs: (i) => ['verify', '-v', '--print-certs', i] }
+      {
+        name: 'Decode Resources',
+        description: 'Decodes resources & AndroidManifest.xml',
+        getArgs: (ctx) => ['d', '-i', ctx.input, '-o', `${ctx.outputDir}/apkeditor_decoded`, '-f']
+      },
+      {
+        name: 'Build Decoded',
+        description: 'Rebuilds decoded folder back to APK',
+        getArgs: (ctx) => ['b', '-i', `${ctx.outputDir}/apkeditor_decoded`, '-o', ctx.outputFile, '-f']
+      },
+      {
+        name: 'Merge Splits',
+        description: 'Merges split bundle directory into single APK',
+        getArgs: (ctx) => ['m', '-i', ctx.input, '-o', ctx.outputFile, '-f']
+      }
     ]
   },
   {
     id: 'apktool',
     name: 'Apktool',
+    description: 'Full Smali bytecode and resource disassembly',
     entrypoint: 'brut.apktool.Main',
     assetFile: 'apktool.dex.jar',
     actions: [
       {
-        name: 'Decompile',
-        getArgs: (i, o) => ['d', '-f', i, '-o', o, '-p', '/data/user/0/com.appium.dextoolsexample/files/framework']
+        name: 'Decompile Smali',
+        description: 'Full Smali bytecode & resource disassembly',
+        getArgs: (ctx) => ['d', '-f', ctx.input, '-o', `${ctx.outputDir}/apktool_decompiled`, '-p', `${ctx.filesDir}/framework`]
       }
     ]
   }

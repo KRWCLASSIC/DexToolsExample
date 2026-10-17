@@ -3,6 +3,8 @@ name: Build Tools
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - 'tools-v*'
       - 'v*'
@@ -35,32 +37,51 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release download --repo REAndroid/APKEditor --pattern "*.jar" --dir ./dl_apkeditor
-          mv ./dl_apkeditor/*.jar ./apkeditor.jar
-          d8 --min-api 26 --output apkeditor.dex.jar apkeditor.jar
+          JAR_FILE=$(ls ./dl_apkeditor/*.jar | head -n 1)
+          mv "$JAR_FILE" ./apkeditor.jar
+          mkdir -p ./tmp_apkeditor
+          unzip -q apkeditor.jar -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d ./tmp_apkeditor 2>/dev/null || true
+          d8 --min-api 26 --output ./tmp_apkeditor apkeditor.jar
+          (cd ./tmp_apkeditor && zip -r -9 ../apkeditor.dex.jar .)
           sha256sum apkeditor.dex.jar | awk '{print $1}' > apkeditor.dex.jar.sha256
+          rm -rf ./tmp_apkeditor ./dl_apkeditor
 
       - name: Build ubersigner.dex.jar
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release download --repo patrickfav/uber-apk-signer --pattern "*uber-apk-signer*.jar" --dir ./dl_ubersigner
-          mv ./dl_ubersigner/*.jar ./ubersigner.jar
-          d8 --min-api 26 --output ubersigner.dex.jar ubersigner.jar
+          JAR_FILE=$(ls ./dl_ubersigner/*.jar | head -n 1)
+          mv "$JAR_FILE" ./ubersigner.jar
+          mkdir -p ./tmp_ubersigner
+          unzip -q ubersigner.jar -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d ./tmp_ubersigner 2>/dev/null || true
+          d8 --min-api 26 --output ./tmp_ubersigner ubersigner.jar
+          (cd ./tmp_ubersigner && zip -r -9 ../ubersigner.dex.jar .)
           sha256sum ubersigner.dex.jar | awk '{print $1}' > ubersigner.dex.jar.sha256
+          rm -rf ./tmp_ubersigner ./dl_ubersigner
 
       - name: Build apktool.dex.jar
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release download --repo iBotPeaches/Apktool --pattern "*.jar" --dir ./dl_apktool
-          mv ./dl_apktool/*.jar ./apktool.jar
-          d8 --min-api 26 --output apktool.dex.jar apktool.jar
+          JAR_FILE=$(ls ./dl_apktool/*.jar | head -n 1)
+          mv "$JAR_FILE" ./apktool.jar
+          mkdir -p ./tmp_apktool
+          unzip -q apktool.jar -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d ./tmp_apktool 2>/dev/null || true
+          d8 --min-api 26 --output ./tmp_apktool apktool.jar
+          (cd ./tmp_apktool && zip -r -9 ../apktool.dex.jar .)
           sha256sum apktool.dex.jar | awk '{print $1}' > apktool.dex.jar.sha256
+          rm -rf ./tmp_apktool ./dl_apktool
 
       - name: Build apksigner.dex.jar
         run: |
-          d8 --min-api 26 --output apksigner.dex.jar "$BUILD_TOOLS_DIR/lib/apksigner.jar"
+          mkdir -p ./tmp_apksigner
+          unzip -q "$BUILD_TOOLS_DIR/lib/apksigner.jar" -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d ./tmp_apksigner 2>/dev/null || true
+          d8 --min-api 26 --output ./tmp_apksigner "$BUILD_TOOLS_DIR/lib/apksigner.jar"
+          (cd ./tmp_apksigner && zip -r -9 ../apksigner.dex.jar .)
           sha256sum apksigner.dex.jar | awk '{print $1}' > apksigner.dex.jar.sha256
+          rm -rf ./tmp_apksigner
 
       - name: Publish Release Assets
         uses: softprops/action-gh-release@v2
@@ -70,5 +91,6 @@ jobs:
           files: |
             *.dex.jar
             *.dex.jar.sha256
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
