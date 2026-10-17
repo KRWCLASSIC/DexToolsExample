@@ -30,34 +30,37 @@ jobs:
           echo "$BUILD_TOOLS_DIR" >> $GITHUB_PATH
           echo "BUILD_TOOLS_DIR=$BUILD_TOOLS_DIR" >> $GITHUB_ENV
 
-      - name: Make package script executable
-        run: chmod +x ./scripts/package-tool.sh
-
       - name: Build APKEditor.dex.jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          URL=$(curl -sL https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
-          echo "Downloading APKEditor from: $URL"
-          curl -sL "$URL" -o apkeditor.jar
-          ./scripts/package-tool.sh apkeditor.jar apkeditor 26
+          gh release download --repo REAndroid/APKEditor --pattern "*.jar" --dir ./dl_apkeditor
+          mv ./dl_apkeditor/*.jar ./apkeditor.jar
+          d8 --min-api 26 --output apkeditor.dex.jar apkeditor.jar
+          sha256sum apkeditor.dex.jar | awk '{print $1}' > apkeditor.dex.jar.sha256
 
       - name: Build ubersigner.dex.jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          URL=$(curl -sL https://api.github.com/repos/patrickfav/uber-apk-signer/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
-          echo "Downloading uber-apk-signer from: $URL"
-          curl -sL "$URL" -o ubersigner.jar
-          ./scripts/package-tool.sh ubersigner.jar ubersigner 26
+          gh release download --repo patrickfav/uber-apk-signer --pattern "*uber-apk-signer*.jar" --dir ./dl_ubersigner
+          mv ./dl_ubersigner/*.jar ./ubersigner.jar
+          d8 --min-api 26 --output ubersigner.dex.jar ubersigner.jar
+          sha256sum ubersigner.dex.jar | awk '{print $1}' > ubersigner.dex.jar.sha256
 
       - name: Build apktool.dex.jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          URL=$(curl -sL https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
-          echo "Downloading apktool from: $URL"
-          curl -sL "$URL" -o apktool.jar
-          ./scripts/package-tool.sh apktool.jar apktool 26
+          gh release download --repo iBotPeaches/Apktool --pattern "*.jar" --dir ./dl_apktool
+          mv ./dl_apktool/*.jar ./apktool.jar
+          d8 --min-api 26 --output apktool.dex.jar apktool.jar
+          sha256sum apktool.dex.jar | awk '{print $1}' > apktool.dex.jar.sha256
 
       - name: Build apksigner.dex.jar
         run: |
-          cp "$BUILD_TOOLS_DIR/lib/apksigner.jar" ./apksigner.jar
-          ./scripts/package-tool.sh apksigner.jar apksigner 26
+          d8 --min-api 26 --output apksigner.dex.jar "$BUILD_TOOLS_DIR/lib/apksigner.jar"
+          sha256sum apksigner.dex.jar | awk '{print $1}' > apksigner.dex.jar.sha256
 
       - name: Publish Release Assets
         uses: softprops/action-gh-release@v2
