@@ -25,7 +25,6 @@ jobs:
 
       - name: Configure Android Build-Tools
         run: |
-          # GitHub ubuntu-latest already includes Android SDK pre-installed
           BUILD_TOOLS_DIR=$(ls -d ${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools/* | sort -V | tail -n 1)
           echo "Using Android Build-Tools: $BUILD_TOOLS_DIR"
           echo "$BUILD_TOOLS_DIR" >> $GITHUB_PATH
@@ -36,17 +35,23 @@ jobs:
 
       - name: Build APKEditor.dex.jar
         run: |
-          wget -q https://github.com/REAndroid/APKEditor/releases/latest/download/APKEditor.jar -O apkeditor.jar
+          URL=$(curl -sL https://api.github.com/repos/REAndroid/APKEditor/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          echo "Downloading APKEditor from: $URL"
+          curl -sL "$URL" -o apkeditor.jar
           ./scripts/package-tool.sh apkeditor.jar apkeditor 26
 
       - name: Build ubersigner.dex.jar
         run: |
-          wget -q https://github.com/patrickfav/uber-apk-signer/releases/latest/download/uber-apk-signer.jar -O ubersigner.jar
+          URL=$(curl -sL https://api.github.com/repos/patrickfav/uber-apk-signer/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          echo "Downloading uber-apk-signer from: $URL"
+          curl -sL "$URL" -o ubersigner.jar
           ./scripts/package-tool.sh ubersigner.jar ubersigner 26
 
       - name: Build apktool.dex.jar
         run: |
-          wget -q https://github.com/iBotPeaches/Apktool/releases/latest/download/apktool.jar -O apktool.jar
+          URL=$(curl -sL https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -n 1)
+          echo "Downloading apktool from: $URL"
+          curl -sL "$URL" -o apktool.jar
           ./scripts/package-tool.sh apktool.jar apktool 26
 
       - name: Build apksigner.dex.jar

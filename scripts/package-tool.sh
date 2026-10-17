@@ -29,32 +29,30 @@ fi
 # Locate Android d8 compiler
 if command -v d8 &> /dev/null; then
     D8_CMD="d8"
+elif [[ -n "${BUILD_TOOLS_DIR:-}" && -x "$BUILD_TOOLS_DIR/d8" ]]; then
+    D8_CMD="$BUILD_TOOLS_DIR/d8"
 elif [[ -n "${ANDROID_HOME:-}" ]]; then
     D8_CMD=$(find "$ANDROID_HOME/build-tools" -name d8 -type f -executable 2>/dev/null | sort -V | tail -n 1)
 else
-    echo "Error: 'd8' not found in PATH and ANDROID_HOME is not set."
+    D8_CMD=$(find "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/build-tools" -name d8 -type f -executable 2>/dev/null | sort -V | tail -n 1)
+fi
+
+if [[ -z "$D8_CMD" || ! -x "$D8_CMD" ]]; then
+    echo "Error: Could not find an executable d8 binary."
     exit 1
 fi
 
-echo "==> Using d8: $D8_CMD"
-echo "==> Packaging: $INPUT_JAR -> ${OUTPUT_NAME}.dex.jar (min-sdk: $MIN_SDK)"
-
-BUILD_DIR=$(mktemp -d -t dextools-build-XXXXXX)
-trap 'rm -rf "$BUILD_DIR"' EXIT
-
-# 1. Transpile JVM bytecode to Dalvik bytecode (Multi-DEX)
-echo "==> Transpiling with d8..."
-"$D8_CMD" --min-api "$MIN_SDK" --output "$BUILD_DIR" "$INPUT_JAR"
-
-# 2. Package all classes*.dex into the output container
 TARGET_JAR="${OUTPUT_NAME}.dex.jar"
-echo "==> Creating ${TARGET_JAR}..."
-(
-    cd "$BUILD_DIR"
-    zip -9 -q "$OLDPWD/$TARGET_JAR" classes*.dex
-)
+rm -f "$TARGET_JAR"
 
-# 3. Calculate SHA-256 Checksum
+echo "==> Using d8: $D8_CMD"
+echo "==> Transpiling $INPUT_JAR -> $TARGET_JAR (min-sdk: $MIN_SDK)..."
+
+# Passing a .jar or .zip output path causes d8 to create the archive containing
+# classes.dex, classes2.dex (Multi-DEX) and automatically preserve non-class resources
+"$D8_CMD" --min-api "$MIN_SDK" --output "$TARGET_JAR" "$INPUT_JAR"
+
+# Calculate SHA-256 Checksum
 SHA256_HASH=$(sha256sum "$TARGET_JAR" | awk '{print $1}')
 echo "$SHA256_HASH" > "${TARGET_JAR}.sha256"
 
