@@ -55,10 +55,54 @@ jobs:
           mv "$JAR_FILE" ./ubersigner.jar
           mkdir -p ./tmp_ubersigner
           unzip -q ubersigner.jar -x "*.class" "META-INF/*.SF" "META-INF/*.RSA" -d ./tmp_ubersigner 2>/dev/null || true
+
+          # Convert embedded debug.keystore from JKS to BKS (Android Dalvik/ART requirement)
+          curl -sLo ./bcprov.jar https://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar
+
+          KS_PATH=$(find ./tmp_ubersigner -name "debug.keystore" | head -n 1)
+          if [ -n "$KS_PATH" ]; then
+            echo "Converting embedded debug.keystore to BKS format at: $KS_PATH"
+            keytool -importkeystore \
+              -srckeystore "$KS_PATH" \
+              -srcstorepass android \
+              -srckeypass android \
+              -destkeystore "${KS_PATH}.bks" \
+              -deststoretype BKS \
+              -deststorepass android \
+              -destkeypass android \
+              -providerclass org.bouncycastle.jce.provider.BouncyCastleProvider \
+              -providerpath ./bcprov.jar \
+              -noprompt || true
+            if [ -f "${KS_PATH}.bks" ]; then
+              mv "${KS_PATH}.bks" "$KS_PATH"
+              echo "Converted to BKS successfully."
+            fi
+          fi
+
+          # Ensure debug.keystore exists and is valid BKS
+          if [ ! -f "$KS_PATH" ] || ! keytool -list -keystore "$KS_PATH" -storetype BKS -storepass android -providerclass org.bouncycastle.jce.provider.BouncyCastleProvider -providerpath ./bcprov.jar >/dev/null 2>&1; then
+            mkdir -p ./tmp_ubersigner
+            KS_PATH="./tmp_ubersigner/debug.keystore"
+            echo "Generating fresh BKS debug.keystore at $KS_PATH..."
+            rm -f "$KS_PATH"
+            keytool -genkeypair -v \
+              -keystore "$KS_PATH" \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storetype BKS \
+              -providerclass org.bouncycastle.jce.provider.BouncyCastleProvider \
+              -providerpath ./bcprov.jar \
+              -storepass android \
+              -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
           d8 --min-api 26 --output ./tmp_ubersigner ubersigner.jar
           (cd ./tmp_ubersigner && zip -r -9 ../ubersigner.dex.jar .)
           sha256sum ubersigner.dex.jar | awk '{print $1}' > ubersigner.dex.jar.sha256
-          rm -rf ./tmp_ubersigner ./dl_ubersigner
+          rm -rf ./tmp_ubersigner ./dl_ubersigner ./bcprov.jar
 
       - name: Build apktool.dex.jar
         env:

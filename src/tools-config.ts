@@ -43,9 +43,9 @@ export const TOOLS: ToolItem[] = [
     assetFile: 'ubersigner.dex.jar',
     actions: [
       {
-        name: 'Sign & Align',
-        description: 'Signs with debug key & zipaligns (supports already signed APKs)',
-        getArgs: (ctx) => ['--apks', ctx.input, '--out', ctx.outputDir, '--allowResign', '--overwrite']
+        name: 'Sign (Debug)',
+        description: 'Signs with debug key (supports already signed APKs)',
+        getArgs: (ctx) => ['--apks', ctx.input, '--out', ctx.outputDir, '--allowResign', '--skipZipAlign']
       },
       {
         name: 'Verify Signatures',
@@ -63,8 +63,8 @@ export const TOOLS: ToolItem[] = [
     actions: [
       {
         name: 'Decode Resources',
-        description: 'Decodes resources & AndroidManifest.xml',
-        getArgs: (ctx) => ['d', '-i', ctx.input, '-o', `${ctx.outputDir}/apkeditor_decoded`, '-f']
+        description: 'Decodes resources & AndroidManifest.xml (skips smali to avoid OOM)',
+        getArgs: (ctx) => ['d', '-i', ctx.input, '-o', `${ctx.outputDir}/apkeditor_decoded`, '-f', '-dex']
       },
       {
         name: 'Build Decoded',

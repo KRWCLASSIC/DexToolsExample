@@ -378,20 +378,20 @@ btnRunPipeline.addEventListener('click', async () => {
     const step2 = await runDexTool({
       toolId: apkeditor.id,
       entrypoint: apkeditor.entrypoint,
-      args: ['d', '-i', apkPath, '-o', decodeDir, '-f'],
+      args: ['d', '-i', apkPath, '-o', decodeDir, '-f', '-dex'],
     });
     log(`[STEP 2/4] APKEditor finished with exit code ${step2.exitCode}`, step2.success ? 'success' : 'warn');
 
     await new Promise((r) => setTimeout(r, 400));
 
-    // STEP 3: UberSigner sign & align
-    log(`\n[STEP 3/4] Re-signing & zipaligning with UberSigner...`, 'info');
+    // STEP 3: UberSigner debug signing
+    log(`\n[STEP 3/4] Re-signing with UberSigner...`, 'info');
     const ubersigner = await ensureTool('ubersigner');
     const signDir = `${ctx.outputDir}/pipeline_signed`;
     const step3 = await runDexTool({
       toolId: ubersigner.id,
       entrypoint: ubersigner.entrypoint,
-      args: ['--apks', apkPath, '--out', signDir, '--allowResign', '--overwrite'],
+      args: ['--apks', apkPath, '--out', signDir, '--allowResign', '--skipZipAlign'],
     });
     if (!step3.success) {
       throw new Error(`UberSigner failed with code ${step3.exitCode}`);
@@ -402,7 +402,7 @@ btnRunPipeline.addEventListener('click', async () => {
     // STEP 4: apksigner verify output
     log(`\n[STEP 4/4] Verifying newly signed APK with apksigner...`, 'info');
     const baseName = apkPath.split('/').pop()?.replace('.apk', '') || 'app';
-    const signedApk = `${signDir}/${baseName}-aligned-debugSigned.apk`;
+    const signedApk = `${signDir}/${baseName}-debugSigned.apk`;
 
     log(`[pipeline] verifying: ${signedApk}`, 'neutral');
     const step4 = await runDexTool({
@@ -410,6 +410,9 @@ btnRunPipeline.addEventListener('click', async () => {
       entrypoint: apksigner.entrypoint,
       args: ['verify', '-v', '--print-certs', signedApk],
     });
+    if (!step4.success) {
+      throw new Error(`apksigner verification on output APK failed with code ${step4.exitCode}`);
+    }
 
     log(`\n======================================================`, 'success');
     log(`✔ PIPELINE COMPLETED SUCCESSFULLY!`, 'success');
